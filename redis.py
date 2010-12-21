@@ -8,76 +8,77 @@ class Redis():
 
     def connect(self, hostname = "localhost", port = 6379):
         """ Sets up a TCP connection to the redis server
-            Socket sock can be used to send to the server (bytes)
-            File Descriptor readFD can be used to read from the server (utf-8
-            strings)
         """
         if self.sock:
             return
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((hostname, port))
-        self.sock = sock                # The socket will be user to write (as bytes) 
-        #self.readFD = sock.makefile("r", encoding="utf8")    # For reading we'll use a fake fd. Enables us to read directly utf8
+        self.sock = sock  
 
     def set(self,key,value):           
-        """ Set the string value as value for the key
-            Gives status code.
-            Returns True if succeeded, False otherwise
+        """ Set the string value of a key. If key already holds its 
+            value, its overwritten, regardless of its type
+            
+            @return: Status code reply. 
+            Always OK
         """
         self.connect()
-        self.sock.sendall(constructMessage("SET", [key,value]))
+        self.sock.sendall(comm.constructMessage("SET", [key,value]))
         return self.handleResponse()
 
     def get(self, key):
-        """ Get the value of the specified key
-            Gives bulk response.
-            Returns the value of the key, or False if the key does not exist
+        """ Get the value of a key. If the key does not exist, the special 
+            value nil is returned. 
+
+            @return: Bulk reply. 
+            The value of key, or None when key does not exist.
         """ 
         self.connect()
-        self.sock.sendall(constructMessage("GET", [key]))
+        self.sock.sendall(comm.constructMessage("GET", [key]))
         return self.handleResponse()
 
     def hset(self, key, field, value):
-        """ Sets the specified field of the key, to the specified value.
-            Gives Integer response (0 if overwritten, 1 if new field was
-            added)
-            Returns True if succeeded, False otherwise
+        """  Sets the field in the hash stored at key, to value.
+
+            @return: Integer reply. 
+            1 if field is new and the value was set.
+            0 if field already exists in the hash and the value was updated.
         """  
         self.connect()
-        self.sock.sendall(constructMessage("HSET", [key, field, value]))
+        self.sock.sendall(comm.constructMessage("HSET", [key, field, value]))
         return self.handleResponse()
     
     def hget(self, key, field):
-        """ Gest the specified field from the given key.
-            Gives bulk reply.
-            Returns True if succeeded, or False if the key or field do not
-            exist
+        """ Returns the value associated with field, in the hash at key.
+
+            @return: Bulk reply.
+            The value associated with field, or None if field is not present or
+            key does not exist
         """ 
         self.connect()
-        self.sock.sendall(constructMessage("HGET", [key,field]))
+        self.sock.sendall(comm.constructMessage("HGET", [key,field]))
         return self.handleResponse()
 
     def hkeys(self, key):
-        """ Returns all the fields contained into a key
-            Gives multi-bulk reply.
-            Returns a list of all the fields into the key.
-            If the key does not exist, returns an empty list.
-            If the key exists, but is not a hashtable, returns False
+        """ Returns all field names in the hash stored at key.
+
+            @return: Multi-bulk reply.
+            List of fields in the hash, or an empty list when key does not
+            exist.
         """
         self.connect()
-        self.sock.sendall(constructMessage("HKEYS", [key]))
+        self.sock.sendall(comm.constructMessage("HKEYS", [key]))
         return self.handleResponse()
 
     def hgetall(self, key):
-        """ Returns both the fields and values contained in a hash.
-            Gives multi-bulk reply.
-            Returns a dictionary of field:value for all the fields in the key.
-            If the key does not exist, returns an empty dic.
-            If the key exists, but is not a hashtable, returns an empty dic.
+        """ Returns all fields and values of the hash stored at key
+        
+            @return: Multi-bulk reply.
+            A dictionary of field:value pairs stored at key.
         """
         self.connect()
-        self.sock.sendall(constructMessage("HGETALL", [key]))
+        self.sock.sendall(comm.constructMessage("HGETALL", [key]))
         # Returns a list
         response = self.handleResponse()
         # Which I transform to a dictionary
@@ -89,20 +90,25 @@ class Redis():
         return False
 
     def save(self):
-        """ Saves the database on disk
+        """ Synchronously save the dataset to disk.
         """
         self.connect()
-        self.sock.sendall(constructMessage("SAVE"))
+        self.sock.sendall(comm.constructMessage("SAVE"))
         return self.handleResponse()
 
     def flushdb(self):
-        """ Remove all the keys from the currently selected database
+        """ Remove all keys from the current database.
+
+            @return: Status code reply.
         """
         self.connect()
-        self.sock.sendall(constructMessage("FLUSHDB"))
+        self.sock.sendall(comm.constructMessage("FLUSHDB"))
         return self.handleResponse()
 
     
+
+
+
     def handleResponse(self):
         """ Handles the response returned from the redis server
         """
@@ -122,11 +128,10 @@ class Redis():
             # to int is done automatically in int(line)
             length = int(response)
             if length == -1:
-                return False
+                return None
             else:
                 # We need to read length bytes
                 value = self.sock.recv(length)
-                
                 #consume the 2 remaning bytes(\r\n)
                 self.sock.recv(2)
                 return value.decode("utf8")
@@ -165,36 +170,3 @@ class Redis():
 
         return False
 
-def constructMessage(command, args = []):
-    """ command: Name of Redis command
-        args: List of arguments
-        Constructs the appropriate message, 
-        that will be send to the redis server.
-        The message represent a database query
-
-        Messages are of the form:
-        *<num arguments>\r\n
-        $<length of command>\r\n
-        command\r\n
-        $<length of arg>\r\n
-        argument\r\n
-        $length of arg>\r\n
-        argument\r\n
-        ...
-        ...\r\n
-    """
-    message1 = [ \
-        "*" + str(len(args) + 1), \
-        "$" + str(len(command.encode("utf8"))), \
-        command \
-    ]
-    
-    message2 = []
-    for arg in args:
-        arg = str(arg)
-        message2.append("$" + str(len(arg.encode("utf8"))))
-        message2.append(arg)
-
-    message = "\r\n".join(message1 + message2) + "\r\n"
-    return message.encode("utf8")
-    #"\r\n".join(message) + "\r\n"
