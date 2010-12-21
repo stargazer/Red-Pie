@@ -1,5 +1,5 @@
 import socket
-from mini_redis.utils import comm
+from red_pie.utils import comm
 
 class Redis():
     def __init__(self, hostname = "localhost", port = 6379):
