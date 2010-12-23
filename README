@@ -1,8 +1,21 @@
 Red-Pie is a Redis client library, for Python3.
-The reason it was developed was the luck of compatible libraries for Python3. Porting is inherently difficult, so a library from scratch was developed.
+Redis is a ground-breaking open-source key:value store. More information and documentation can be found at (http://redis.io/). Just for the record, the Redis site has probably the most simple and comprehensive documentation I have seen about any single tool out there.
 
-The focus is mostly on performance. As far as databases are concerned, a great part of the overhead of a query goes to parsing the server's response. Since the query itself is executed on the server, on which we have no control, the focus is mostly on receiving and parsing the response as quickly as possible.
+Red-pie has been developed due to the lack of Python3 compatible Redis client libraries. Porting is inherently difficult, so a library from scratch was developed.
 
-This work tries to respect the interface of Redis as much as possible,  meaning that when Redis gives a response, Red-pie parses it and returns the same response to the client application. However there are cases when this is violated. Examples are a few cases where Redis returns a list, and it is much more handy to convert the list to a dictionary, for better and faster access. In any case, every Red-pie function is documented, and the response type is clear.
+The focus is mostly on performance and maintainability. As far as databases are concerned, a great part of the overhead of a query goes to parsing the server's response. Since the query itself is executed on the server, on which we have no control, the focus is mostly on receiving and parsing the response as quickly as possible. Moreover I have tried keeping the code as clean as possible, so that anyone can dive right into it, and hack the hell out of it.
 
-Redis is a ground-breaking key-value store. More information and documentation can be found at (http://redis.io/)
+This library tries to respect the interface of Redis as much as possible,  meaning that in most cases Red-pie returns the response of the Redis server to the client. However there are cases when this is intentionally violated. Examples are a few cases where Redis returns a list, and a dictionary would instead be much more handy for the client application.
+ and it is much more handy to convert the list to a dictionary, for convenient and faster access by the client. 
+In any case, every Red-pie function is documented, and the response type is clear.
+
+At this point, Red-pie doesn't support all of Redis' functionality. Functionality is added constantly and soon enough everything will be included.
+After it is feature-complete, an attempt to ensure backward compatibility with Python2 will be done. For now this is not a priority, since there are already working libs
+for Python2. However it will be a very neat feature.
+
+In order to use Red-pie, place the folder "red" in the root folder of your project. Import it in a module by using:
+from red import pie	
+At that point, you can create an instance of the pie.Redis() class, and then execute functions upon it.
+
+
+
