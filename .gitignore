@@ -1,0 +1,9 @@
+*.[oa]
+*.~
+*.swp
+*.py.swp
+*.swo
+*.pyc
+*.txt
+credentials*
+tags
