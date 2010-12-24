@@ -16,6 +16,19 @@ class Redis():
         sock.connect((hostname, port))
         self.sock = sock  
 
+    def exists(self, key):
+        """ Test if the specified key exists.
+
+            @return: Integer reply.
+            1, if the key exists
+            0, otherwise
+            
+        """
+        self.connect()
+        self.sock.sendall(comm.constructMessage("EXISTS", [key]))
+        return self.handleResponse()
+
+
     def set(self,key,value):           
         """ Set the string value of a key. If key already holds its 
             value, its overwritten, regardless of its type
@@ -89,6 +102,8 @@ class Redis():
             return dic
         return False
 
+
+
     def select(self, index):
         """ Selects the DB which has the specified zero-based
             numeric index.
@@ -125,7 +140,8 @@ class Redis():
         return self.handleResponse()
 
     def quit(self):
-        """ Asks the server to close the connection.
+        """ Asks the server to close the connection. The socket closes.
+            Subsequent connections will use different sockets.
 
             @return: Status code reply. Always returns OK
         """               
