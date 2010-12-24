@@ -1,4 +1,4 @@
-
+import sys
 
 def getLine(sock):
     """ Gets a sock communicating with the redis server
@@ -41,7 +41,7 @@ def constructMessage(command, args = []):
     """
     part_1 = [ \
         "*" + str(len(args) + 1), \
-        "$" + str(len(command.encode("utf8"))), \
+        "$" + str(len(command)), \
         command \
     ]
     
@@ -53,4 +53,4 @@ def constructMessage(command, args = []):
 
     message = "\r\n".join(part_1 + part_2) + "\r\n"
     return message.encode("utf8")
-    #"\r\n".join(message) + "\r\n"
+            
