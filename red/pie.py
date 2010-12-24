@@ -89,6 +89,16 @@ class Redis():
             return dic
         return False
 
+    def select(self, index):
+        """ Selects the DB which has the specified zero-based
+            numeric index.
+
+            @return: Status code reply. OK if connection was successful
+        """
+        self.connect()
+        self.sock.sendall(comm.constructMessage("SELECT",[index]))
+        return self.handleResponse()
+
     def save(self):
         """ Synchronously save the dataset to disk.
         """
@@ -105,7 +115,33 @@ class Redis():
         self.sock.sendall(comm.constructMessage("FLUSHDB"))
         return self.handleResponse()
 
-    
+    def dbsize(self):
+        """ Returns the number of keys in the currently selected database
+        
+            @return: Integer reply            
+        """
+        self.connect()
+        self.sock.sendall(comm.constructMessage("DBSIZE"))
+        return self.handleResponse()
+
+    def quit(self):
+        """ Asks the server to close the connection.
+
+            @return: Status code reply. Always returns OK
+        """               
+        self.connect()
+        self.sock.sendall(comm.constructMessage("QUIT"))
+        self.sock = None    # The socket has closed the connection. None
+                            # is used in connect() to symbolize this.
+        
+        #del self           # del, only removes the local reference to the
+                            # object. So if I had placed "del object" here,
+                            # the object would just unbind from the self var.
+                            # It would still exist on the calling program's 
+                            # namespace, since there still would be a reference
+                            # there
+                           
+        return "OK"
 
 
 
