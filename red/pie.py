@@ -3,18 +3,25 @@ from red.utils import comm
 
 class Redis():
     def __init__(self, hostname = "localhost", port = 6379):
-        self.sock = None
+        self.sock = socket.socket()
+        self.sock.close()
         self.connect(hostname, port)
 
     def connect(self, hostname = "localhost", port = 6379):
         """ Sets up a TCP connection to the redis server
-        """
-        if self.sock:
-            return
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((hostname, port))
-        self.sock = sock  
+            The only reliable way to check if there is an active connection
+            to the Redis server, is by sending a message (even an empty
+            bytearray).
+            If for example, the server closes the connection, but we still have
+            an open socket, we can't detect it otherwise.
+        """
+        try:
+            self.sock.send(b"")
+        except socket.error:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((hostname, port))
+            self.sock = sock  
 
     def exists(self, key):
         """ Test if the specified key exists.
@@ -51,6 +58,11 @@ class Redis():
         self.sock.sendall(comm.constructMessage("GET", [key]))
         return self.handleResponse()
 
+    def keys(self, pattern = None):
+        self.connect()
+        self.sock.sendall(comm.constructMessage("KEYS", [pattern]))
+        return self.handleResponse()
+
     def hset(self, key, field, value):
         """  Sets the field in the hash stored at key, to value.
 
@@ -59,7 +71,13 @@ class Redis():
             0 if field already exists in the hash and the value was updated.
         """  
         self.connect()
+        #try:
         self.sock.sendall(comm.constructMessage("HSET", [key, field, value]))
+        #except socket.error:
+        # self.sock.close()
+        #self.connect()
+        #self.sock.sendall(comm.constructMessage("HSET", [key, field, value]))
+
         return self.handleResponse()
     
     def hget(self, key, field):
@@ -71,6 +89,18 @@ class Redis():
         """ 
         self.connect()
         self.sock.sendall(comm.constructMessage("HGET", [key,field]))
+        return self.handleResponse()
+
+    def hmset(self, key, *field_value):
+        """ Sets the specified fields to their respective values in the hash
+            stored at key.
+            
+            @param field_value: Tuple of arguments. field1, value1, field2,
+            value2, ...
+            @return: Status code reply 
+        """        
+        self.connect()
+        self.sock.sendall(comm.constructMessage("HMSET", [key] + list(field_value)))
         return self.handleResponse()
 
     def hkeys(self, key):
@@ -147,8 +177,8 @@ class Redis():
         """               
         self.connect()
         self.sock.sendall(comm.constructMessage("QUIT"))
-        self.sock = None    # The socket has closed the connection. None
-                            # is used in connect() to symbolize this.
+        # self.sock = None    # The socket has closed the connection. None
+                              # is used in connect() to symbolize this.
         
         #del self           # del, only removes the local reference to the
                             # object. So if I had placed "del object" here,
@@ -166,7 +196,7 @@ class Redis():
         """
         line = b""
         byte = self.sock.recv(1)
-        
+
         # Bulk reply
         if byte == b"$":
             # Construct the first line of reply.
