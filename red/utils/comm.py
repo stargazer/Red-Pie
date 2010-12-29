@@ -15,7 +15,7 @@ def getLine(sock):
         next_byte = sock.recv(1)  # read a byte
         if next_byte == b"\r":    # if it's end of line, break
             break                  
-        line += next_byte         # otherwise, stick it with the rest
+        line += next_byte         # otherwise, istick it with the rest
     sock.recv(1)                  # Consume the remaining \n character
     return line
     
@@ -53,4 +53,4 @@ def constructMessage(command, args = []):
 
     message = "\r\n".join(part_1 + part_2) + "\r\n"
     return message.encode("utf8")
-            
+
