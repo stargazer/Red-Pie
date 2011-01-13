@@ -1,14 +1,15 @@
 import sys
 
 def getLine(sock):
-    """ Gets a sock communicating with the redis server
-        Reads the response of the server, byte per byte,
+    """ Reads the response of the server, byte per byte,
         and returns a line of the server response
-        
         The line returned is in byte format, not in 
-        any encoded.
+        any encoded form.
 
         In the end, the socket points to the start of the next line
+
+        @param line: Socket communicating with the redis server
+        @return: A line of bytes
     """
     line = b""
     while True:
@@ -26,7 +27,9 @@ def constructMessage(command, args = []):
         The message represents a database query
         
         @param command: Database command to execute
-        @param: List of arguments for command
+        @param args: List of arguments for command
+        @return: Message that will be send to the redis server
+        in order to execute the query
 
         Messages are in the form:
         *<num arguments>\r\n
@@ -34,7 +37,7 @@ def constructMessage(command, args = []):
         command\r\n
         $<length of arg>\r\n
         argument\r\n
-        $length of arg>\r\n
+        $<length of arg>\r\n
         argument\r\n
         ...
         ...\r\n

@@ -12,7 +12,8 @@ class Redis():
 
             The only reliable way to check if there is an active connection
             to the Redis server, is by sending a message (even an empty
-            bytearray).
+            bytearray). If the message doesn't arrive, it means that the
+            connection is either damaged or the socket has closed.
             If for example, the server closes the connection, but we still have
             an open socket, we can't detect it otherwise.
         """
@@ -71,13 +72,7 @@ class Redis():
             0 if field already exists in the hash and the value was updated.
         """  
         self.connect()
-        #try:
         self.sock.sendall(comm.constructMessage("HSET", [key, field, value]))
-        #except socket.error:
-        # self.sock.close()
-        #self.connect()
-        #self.sock.sendall(comm.constructMessage("HSET", [key, field, value]))
-
         return self.handleResponse()
     
     def hget(self, key, field):
